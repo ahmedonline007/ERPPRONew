@@ -1,0 +1,20 @@
+﻿using System;
+using System.Collections.Generic;
+
+#nullable disable
+
+namespace ContextERP.Models
+{
+    public partial class TblPayoffaDebt
+    {
+        public int Id { get; set; }
+        public int? CustomerId { get; set; }
+        public decimal? Debt { get; set; }
+        public DateTime? DebtDate { get; set; }
+        public bool? IsDeleted { get; set; }
+        public string Describtion { get; set; }
+        public bool? IsReturn { get; set; }
+
+        public virtual TblSupplierCustomer Customer { get; set; }
+    }
+}

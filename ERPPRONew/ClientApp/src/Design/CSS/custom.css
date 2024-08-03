@@ -1,0 +1,6 @@
+/* Provide sufficient contrast against white background */
+ 
+
+.modal-dialog {
+    width: 77% !important;
+}

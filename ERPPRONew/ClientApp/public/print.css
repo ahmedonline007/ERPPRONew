@@ -1,0 +1,12 @@
+﻿@media print {
+    table tbody tr .cell {
+        color: red;
+    }
+}
+
+/*
+@media screen {
+    table tbody tr .cell {
+        color: red;
+    }
+}*/
