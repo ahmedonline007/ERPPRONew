@@ -12,5 +12,6 @@ namespace IERPRepository.IERPRepository
         List<DtoReturnInvoices> selectAllReturnInvoices();
         decimal? selectAllReturnInvoicesToday(string date);
         decimal? selectAllTotalReturnInvoicesToday(string date);
+        void DeletReturnInvoices(int? id);
     }
 }

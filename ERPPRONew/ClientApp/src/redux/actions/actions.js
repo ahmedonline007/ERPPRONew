@@ -615,6 +615,20 @@ export function deleteInvoices(id) {
                 id
             });
         }).catch(function (error) {
+            console.log("DELETERETURNINVOICES: ", error);
+            toastr.error("يوجد مشكلة برجاء الاتصال بالمسؤول");
+        });
+    };
+}
+export function deleteReturnInvoices(id) {
+    return (dispatch) => {
+        axiosDocs.get(`DeletReturnInvoices?id=${id}`).then(function (response) {
+            toastr.success("تم حذف الفاتورة بنجاح");
+            dispatch({
+                type: types.DELETERETURNINVOICES,
+                id
+            });
+        }).catch(function (error) {
             console.log("deleteInvoices: ", error);
             toastr.error("يوجد مشكلة برجاء الاتصال بالمسؤول");
         });

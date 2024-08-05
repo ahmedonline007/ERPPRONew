@@ -681,6 +681,17 @@ export default function (state = initialState, action) {
                 listInvoices: [...state.listInvoices]
             };
 
+        case 'DELETERETURNINVOICES':
+
+            let _listReteunInvoices = state.listInvoices;
+
+            let _indexReturnInvoices = _listReteunInvoices.findIndex(x => x.id === action.id);
+            _listReteunInvoices.splice(_indexReturnInvoices, 1);
+
+            return {
+                ...state,
+                listInvoices: [...state.listInvoices]
+            };
 
         case 'LISTPAYEDOFFDEBET':
 

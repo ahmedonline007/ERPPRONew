@@ -9,5 +9,6 @@ namespace IERPRepository.IERPRepository
     public interface IReturnInvoicesDetailsRespository : IGenericRepository<TblReturnInvoicesDetail>
     {
         void AddReturnInvoicesDetails(int? invoiceId, int? invoicesNo, List<DtoReturnInvoicesDetails> dtoReturnInvoicesDetails);
+        void DeleteItemsFromInvoicesDetails(int? InvoiceId, int? numberOfInvoiceBySystem);
     }
 }

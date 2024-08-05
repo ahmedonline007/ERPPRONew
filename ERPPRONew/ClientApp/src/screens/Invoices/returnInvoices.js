@@ -2,13 +2,14 @@
 import { connect } from 'react-redux';
 import actions from '../../redux/actions';
 import { bindActionCreators } from "redux";
-import { Button, Modal, Form, Table } from 'react-bootstrap';
+import { Button, Modal, Form, Table, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import ReactTable from '../renderData/renderData';
 import Config from "../../Config/Config";
 import toastr from 'toastr';
 import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css"; 
-
+import "react-datepicker/dist/react-datepicker.css";
+import Delete from '../../Design/img/delete.png';
+import Confirme from '../Confirme/Confirme';
 class ReturnInvoices extends Component {
 
     constructor(props) {
@@ -21,6 +22,31 @@ class ReturnInvoices extends Component {
 
         // this is columns of Department
         this.cells = [
+            {
+                Header: "",
+                id: "checkbox",
+                accessor: "",
+                Cell: (rowInfo) => {
+                    return (
+                        <div>
+                            <OverlayTrigger
+                                key={`topDelete-${rowInfo.original.id}`}
+                                placement={'top'}
+                                overlay={
+                                    <Tooltip id={`tooltip-top`}>
+                                        <strong>حذف</strong>.
+                                    </Tooltip>
+                                }>
+                                <img src={Delete} className="Delete"
+                                    onClick={() => this.viewConfimeRowDelete(rowInfo.original.id)}
+                                    style={{ width: "25px", cursor: 'pointer', marginRight: '15px' }} />
+                            </OverlayTrigger>
+                        </div>
+                    );
+                },
+                sortable: false,
+                width: 100
+            },
             {
                 Header: <strong> رقم الفاتورة </strong>,
                 accessor: 'numberOfInvoiceSupplier',
@@ -155,7 +181,8 @@ class ReturnInvoices extends Component {
             listReturnInvoices: [],
             startDate: new Date(),
             finishDate: new Date(),
-            objCustomer: {}
+            objCustomer: {},
+            selected: [],
         }
     }
 
@@ -177,72 +204,103 @@ class ReturnInvoices extends Component {
         this.props.history.push("/ReturnInvoicesAddEdit/0");
     }
 
+    // this function when Delete one item
+    viewConfimeRowDelete = (id) => {
+
+        let selectedRows = this.state.selected;
+
+        if (selectedRows.length > 0) {
+            selectedRows = []
+        }
+
+        selectedRows.push(id);
+
+        this.setState({
+            showConfirme: true,
+            show: false,
+            selected: selectedRows,
+            type: "Row"
+        });
+    }
+
+    // this function when submit Delete item
+    handleDelete = () => {
+        this.props.actions.deleteReturnInvoices(this.state.selected[0]);
+
+        this.setState({
+            show: false,
+            showConfirme: false,
+            selected: []
+        });
+    }
+
     // this function when get value from grid to edit feild
     viewDetails = (state, rowInfo, column, instance) => {
 
         const { selection } = this.state;
         return {
             onClick: (e, handleOriginal) => {
+                if (e.target.className !== "Delete") {
+                    let items = this.props.listReturnInvoices.find(x => x.id === rowInfo.original.id).listReturnInvoicesDetails;
 
-                let items = this.props.listReturnInvoices.find(x => x.id === rowInfo.original.id).listReturnInvoicesDetails;
+                    let totalSize1 = items.length > 0 ? items.filter(x => x.code == "" && x.type === true) : 0;
+                    if (totalSize1.length > 0) {
+                        totalSize1 = totalSize1.map(x => {
+                            let centi = x.centi.includes(".") ? x.centi.split('.')[1].toString() : x.centi
+                            return parseFloat(x.meter.toString() + "." + centi)
+                        }).reduce((a, c) => { return a + c })
+                    } else {
+                        totalSize1 = 0;
+                    }
 
-                let totalSize1 = items.length > 0 ? items.filter(x => x.code == "" && x.type === true) : 0;
-                if (totalSize1.length > 0) {
-                    totalSize1 = totalSize1.map(x => {
-                        let centi = x.centi.includes(".") ? x.centi.split('.')[1].toString() : x.centi
-                        return parseFloat(x.meter.toString() + "." + centi)
-                    }).reduce((a, c) => { return a + c })
-                } else {
-                    totalSize1 = 0;
+                    let totalSize2 = items.length > 0 ? items.filter(x => x.code != "" && x.type === true) : 0;
+                    if (totalSize2.length > 0) {
+                        totalSize2 = totalSize2.map(x => {
+                            let centi = x.centi.includes(".") ? x.centi.split('.')[1].toString() : x.centi
+                            return parseFloat(x.meter.toString() + "." + centi)
+                        }).reduce((a, c) => { return a + c })
+                    } else {
+                        totalSize2 = 0;
+                    }
+
+                    let totalQty1 = items.length > 0 ? items.filter(x => x.code == "" && x.type === true) : 0;
+                    if (totalQty1.length > 0) {
+                        totalQty1 = totalQty1.map(x => x.quantity).reduce((a, c) => { return a + c });
+                    } else {
+                        totalQty1 = 0;
+                    }
+
+                    let totalQty2 = items.length > 0 ? items.filter(x => x.code != "" && x.type === true) : 0;
+                    if (totalQty2.length > 0) {
+                        totalQty2 = totalQty2.map(x => x.quantity).reduce((a, c) => { return a + c })
+                    } else {
+                        totalQty2 = 0;
+                    }
+
+                    let totalQty3 = items.length > 0 ? items.filter(x => x.type === false) : 0;
+                    if (totalQty3.length > 0) {
+                        totalQty3 = totalQty3.map(x => x.quantity).reduce((a, c) => { return a + c })
+                    } else {
+                        totalQty3 = 0;
+                    }
+
+                    items.forEach(i => {
+                        i.centi = i.centi.includes(".") ? i.centi.split('.')[1].toString() : i.centi;
+                        i.totalPrice = i.type === true ? (i.priceReturn * (i.meter + "." + i.centi)).toFixed(0) : (i.priceReturn * i.quantity).toFixed(0)
+
+                    });
+
+                    this.setState({
+                        totalSize1,
+                        totalSize2,
+                        totalQty1,
+                        totalQty2,
+                        totalQty3,
+                        show: true,
+                        listItems: items,
+                        objCustomer: rowInfo.original
+                    });
                 }
-
-                let totalSize2 = items.length > 0 ? items.filter(x => x.code != "" && x.type === true) : 0;
-                if (totalSize2.length > 0) {
-                    totalSize2 = totalSize2.map(x => {
-                        let centi = x.centi.includes(".") ? x.centi.split('.')[1].toString() : x.centi
-                        return parseFloat(x.meter.toString() + "." + centi)
-                    }).reduce((a, c) => { return a + c })
-                } else {
-                    totalSize2 = 0;
-                }
-
-                let totalQty1 = items.length > 0 ? items.filter(x => x.code == "" && x.type === true) : 0;
-                if (totalQty1.length > 0) {
-                    totalQty1 = totalQty1.map(x => x.quantity).reduce((a, c) => { return a + c });
-                } else {
-                    totalQty1 = 0;
-                }
-
-                let totalQty2 = items.length > 0 ? items.filter(x => x.code != "" && x.type === true) : 0;
-                if (totalQty2.length > 0) {
-                    totalQty2 = totalQty2.map(x => x.quantity).reduce((a, c) => { return a + c })
-                } else {
-                    totalQty2 = 0;
-                }
-
-                let totalQty3 = items.length > 0 ? items.filter(x => x.type === false) : 0;
-                if (totalQty3.length > 0) {
-                    totalQty3 = totalQty3.map(x => x.quantity).reduce((a, c) => { return a + c })
-                } else {
-                    totalQty3 = 0;
-                }
-
-                items.forEach(i => {
-                    i.centi = i.centi.includes(".") ? i.centi.split('.')[1].toString() : i.centi;
-                    i.totalPrice = i.type === true ? (i.priceReturn * (i.meter + "." + i.centi)).toFixed(0) : (i.priceReturn * i.quantity).toFixed(0)
-
-                });
-
-                this.setState({
-                    totalSize1,
-                    totalSize2,
-                    totalQty1,
-                    totalQty2,
-                    totalQty3,
-                    show: true,
-                    listItems: items,
-                    objCustomer: rowInfo.original
-                });
             }
         };
     };
@@ -338,7 +396,7 @@ class ReturnInvoices extends Component {
                         <div className="page-title-actions">
                             <Button size="lg" style={{ width: '80px', height: '35px' }} onClick={this.showModal.bind(this)}>إضافة</Button>
                         </div>
-                        <br /> 
+                        <br />
                         <div className="row">
                             <div className="col-md-6">
                                 <Form.Group controlId="backendPageNameEng">
@@ -366,10 +424,10 @@ class ReturnInvoices extends Component {
                             </div>
                         </div>
                         <br />
-                        <br />  <br />  
+                        <br />  <br />
                         <div className="page-title-actions">
                             <Button size="lg" style={{ width: '80px', height: '35px' }} onClick={this.handleSearch}>بحث</Button>
-                            <Button size="lg"  style={{ width: '120px', height: '35px' }} onClick={this.handleResetSearch}>عرض الكل</Button>
+                            <Button size="lg" style={{ width: '120px', height: '35px' }} onClick={this.handleResetSearch}>عرض الكل</Button>
                         </div>
                         <br />
                         <br />
@@ -381,6 +439,7 @@ class ReturnInvoices extends Component {
                             defaultPageSize={200}
                         />
                     </div>
+                    <Confirme show={this.state.showConfirme} handleClose={this.handleClose.bind(this)} handleDelete={this.handleDelete} />
                 </div>
                 <Modal show={this.state.show} onHide={this.handleClose.bind(this)} style={{ opacity: 1, marginTop: '10%', fontWeight: "bold", fontSize: "25px" }}>
                     <Modal.Header closeButton>

@@ -14,11 +14,18 @@ namespace ERPRepository.ERPRepository
         private readonly ITransactionSupplierCustomerRepository _transactionSupplierCustomerRepository;
         private readonly ISupplierCustomerRespository _supplierCustomerRespository;
         private readonly IPayoffaDebtRepository _payoffaDebtRepository;
-        public ReturnInvoicesRepository(IPayoffaDebtRepository payoffaDebtRepository, ISupplierCustomerRespository supplierCustomerRespository, ITransactionSupplierCustomerRepository transactionSupplierCustomerRepository)
+        private readonly IReturnInvoicesDetailsRespository _returnInvoicesDetailsRepository;
+        private readonly ITransactionSupplierCustomerStoreRepository _transactionSupplierCustomerStoreRepository;
+
+        public ReturnInvoicesRepository(IPayoffaDebtRepository payoffaDebtRepository, ISupplierCustomerRespository supplierCustomerRespository,
+                                        ITransactionSupplierCustomerRepository transactionSupplierCustomerRepository, IReturnInvoicesDetailsRespository returnInvoicesDetailsRepository,
+                                        ITransactionSupplierCustomerStoreRepository transactionSupplierCustomerStoreRepository)
         {
             _payoffaDebtRepository = payoffaDebtRepository;
             _transactionSupplierCustomerRepository = transactionSupplierCustomerRepository;
             _supplierCustomerRespository = supplierCustomerRespository;
+            _returnInvoicesDetailsRepository = returnInvoicesDetailsRepository;
+            _transactionSupplierCustomerStoreRepository = transactionSupplierCustomerStoreRepository;
         }
 
         public object AddReturnInvoices(DtoReturnInvoices dtoReturnInvoices)
@@ -26,8 +33,7 @@ namespace ERPRepository.ERPRepository
             int? maxPurchaseOrder = Context.TblReturnInvoices.AsNoTracking().Max(x => x.NumberOfInvoiceBySystem) ?? 0;
 
             if (dtoReturnInvoices != null)
-            {
-
+            { 
                 //تسجيل بيانات الفاتورة
                 var objReturnInvoice = new TblReturnInvoice()
                 {
@@ -136,13 +142,46 @@ namespace ERPRepository.ERPRepository
 
             return result;
         }
-
-
+         
         public decimal? selectAllTotalReturnInvoicesToday(string date)
         {
             var result = Context.TblReturnInvoices.AsNoTracking().Where(x => x.IsDelate == null && x.Date == Convert.ToDateTime(date)).Sum(x => x.TotalInvoice);
 
             return result;
+        }
+
+        public void DeletReturnInvoices(int? id)
+        {
+            var isExist = FindBy(x => x.Id == id).FirstOrDefault();
+
+            if (isExist != null)
+            {
+                //1- حذف الفاتورة
+                isExist.IsDelate = true;
+
+                Edit(isExist);
+                Save();
+
+                //2- حذف الاصناف من المخزن  وتعديل الكميات
+                _returnInvoicesDetailsRepository.DeleteItemsFromInvoicesDetails(isExist.Id, isExist.NumberOfInvoiceBySystem);
+
+                //3-عمل حركة للعميل ان الفاتورة تم حذفها
+                DtoTransactionSupplierCustomer objTransaction = new DtoTransactionSupplierCustomer()
+                {
+                    customerId = isExist.CustomerId,
+                    date = DateTime.Now,
+                    invoiceNumber = isExist.NumberOfInvoiceBySystem.ToString(),
+                    debit = isExist.Amount ?? 0,
+                    credit = isExist.Payed ?? 0,
+                    total = isExist.TotalInvoice ?? 0,
+                    type = "حذف مرتجع  فاتورة مبيعات"
+                };
+                _transactionSupplierCustomerRepository.AddTransactionSupplierCustomer(objTransaction);
+
+                //4-حذف المبلغ من الترصيد                
+                var _result = _transactionSupplierCustomerStoreRepository.DeleteTransactionStore(isExist.NumberOfInvoiceBySystem.ToString(), isExist.CustomerId, "تسجيل فاتورة مبيعات");
+                _supplierCustomerRespository._UpdateSupplierCustomerWithNewStore(isExist.CustomerId, _result.Credit, _result.Debit);
+            }
         }
     }
 }

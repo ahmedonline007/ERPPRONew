@@ -856,6 +856,15 @@ namespace ERPPRONew.Controllers
         }
 
         [HttpGet]
+        [Route("DeletReturnInvoices")]
+        public ActionResult DeletReturnInvoices(int? id)
+        {
+            _returnInvoicesRepository.DeletReturnInvoices(id);
+
+            return Ok();
+        }
+
+        [HttpGet]
         [Route("GetAllReturnInvoices")]
         public ActionResult GetAllReturnInvoices()
         {
