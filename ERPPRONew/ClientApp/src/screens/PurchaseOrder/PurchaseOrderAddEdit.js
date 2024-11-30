@@ -487,40 +487,26 @@ class PurchaseOrderAddEdit extends Component {
         if (value.priceSupplier > 0) {
             // فى حالة انه ضغط على السطر لوحدة
             if (this.state.isList === false) {
-
                 this.setState({
                     isLoading: true
                 });
-
                 let list = this.state.listItems;
-
                 let objRow = this.state.listItems.find(x => x.id === value.id);
-
                 let index = this.state.listItems.findIndex(x => x.id === value.id);
-
                 objRow["priceSupplier"] = value.priceSupplier;
-
-                /*list[index] = {};*/
-
                 if (value.type) {
                     const mearge = objRow.meter.toString() + "." + objRow.centi;
                     objRow.total = (parseFloat(objRow.priceSupplier) * parseFloat(mearge)).toFixed(2);
                     objRow.total = parseFloat(objRow.total);
                 } else {
                     objRow.total = (parseFloat(objRow.priceSupplier) * parseFloat(objRow.quantity)).toFixed(2);
-
                     objRow.total = parseFloat(objRow.total);
                 }
 
                 let sum = this.state.listItems.length > 0 ? this.state.listItems.map(o => o.total || 0).reduce((a, c) => { return a + c }).toFixed(2) : 0;
 
                 sum = parseFloat(sum);
-
-                //if (this.state.listItems.length > 1) {
-                //    sum += objRow.total;
-                //}
-
-
+                  
                 let dtoPurchaseOrder = this.state.objPurchaseOrder;
 
                 dtoPurchaseOrder["totalInvoice"] = sum;
@@ -541,48 +527,35 @@ class PurchaseOrderAddEdit extends Component {
             else {
                 // فى حالة انه علم على اكتر من سطر
                 this.setState({
-                    isLoading: true
+                    isLoading: true,
+                    show: false,
                 });
-
                 let list = this.state.listItems;
-
                 this.state.selected.map(row => {
-
                     let item = this.state.listItems.find(x => x.id == row);
-
                     let index = this.state.listItems.findIndex(x => x.id === row);
-
                     list[index] = {};
-
                     if (item.type) {
                         const mearge = item.meter.toString() + "." + item.centi;
                         item.total = (parseFloat(value.priceSupplier) * parseFloat(mearge)).toFixed(2);
                         item.total = parseFloat(item.total);
-                    } else {
+                    }
+                    else {
                         item.total = (parseFloat(value.priceSupplier) * parseFloat(item.quantity)).toFixed(2);
-
                         item.total = parseFloat(item.total);
                     }
-
                     item.priceSupplier = value.priceSupplier;
-
                     list.splice(index, 1, item);
-
                     value.invoiceNo = this.state.objPurchaseOrder.invoiceNo;
                     value.productId = item.productId;
                     value.type = item.type;
                     value.id = item.id;
-
                     this.props.actions.editItems(value);
                 });
-
                 let sum = this.state.listItems.length > 0 ? this.state.listItems.map(o => o.total).reduce((a, c) => { return a + c }).toFixed(2) : 0;
-
                 let dtoPurchaseOrder = this.state.objPurchaseOrder;
-
                 dtoPurchaseOrder["totalInvoice"] = parseFloat(sum);
                 dtoPurchaseOrder["amount"] = parseFloat(sum);
-
                 this.setState({
                     objPurchaseOrder: dtoPurchaseOrder,
                     listItems: [...list],

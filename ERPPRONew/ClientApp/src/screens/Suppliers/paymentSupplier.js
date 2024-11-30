@@ -200,7 +200,7 @@ class PaymentSupplier extends Component {
 
             this.props.actions.getCreditDepit(value.value);
         } else {
-            toastr.error("لا يوجد بيانات");
+            //toastr.error("لا يوجد بيانات");
 
             this.setState({
                 customerId: value,
